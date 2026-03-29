@@ -1,0 +1,5 @@
+{
+  "name": "FleetMaster Workshop",
+  "description": "Plataforma integral para la gestión de flota, mantenimiento preventivo/correctivo, agendamiento y control de taller.",
+  "requestFramePermissions": []
+}

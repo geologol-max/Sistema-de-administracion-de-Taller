@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Fields: uid, email, displayName, role, createdAt
+    //
+    // Collection: vehicles
+    // Fields: ppu, model, contract, costCenter, currentMileage, lastMaintenanceDate, nextMaintenanceMileage, nextMaintenanceDate
+    //
+    // Collection: appointments
+    // Fields: ppu, scheduledDate, mileage, reason, status, supervisorUid, createdAt
+    //
+    // Collection: maintenance_logs
+    // Fields: appointmentId, ppu, type, entryChecklist, exitChecklist, items, totalHours, totalCost, workshopStaff, supervisorUid, completedAt
+    //
+    // Collection: projects
+    // Fields: ppu, name, startDate, endDate, budget, tasks, status
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "Geologol@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    function hasAnyRole(roles) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in roles;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['admin', 'supervisor', 'workshop', 'management', 'control'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data) && (request.resource.data.role != 'admin' || isAdmin());
+      allow update: if isAdmin() || (isOwner(uid) && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    match /vehicles/{ppu} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || hasAnyRole(['management', 'supervisor']);
+    }
+
+    match /appointments/{id} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && hasAnyRole(['admin', 'supervisor', 'management']);
+      allow update: if isAuthenticated() && hasAnyRole(['admin', 'supervisor', 'workshop', 'management', 'control']);
+      allow delete: if isAdmin();
+    }
+
+    match /maintenance_logs/{id} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && hasAnyRole(['admin', 'workshop', 'management']);
+      allow update: if isAuthenticated() && hasAnyRole(['admin', 'workshop', 'management']);
+      allow delete: if isAdmin();
+    }
+
+    match /projects/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || hasAnyRole(['management', 'supervisor']);
+    }
+  }
+}

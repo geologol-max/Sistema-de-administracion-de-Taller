@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Application user with specific roles.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "supervisor", "workshop", "management", "control"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Vehicle in the fleet.",
+      "type": "object",
+      "properties": {
+        "ppu": { "type": "string", "description": "Placa Patente Única" },
+        "model": { "type": "string" },
+        "contract": { "type": "string" },
+        "costCenter": { "type": "string" },
+        "currentMileage": { "type": "number" },
+        "lastMaintenanceDate": { "type": "string", "format": "date-time" },
+        "nextMaintenanceMileage": { "type": "number" },
+        "nextMaintenanceDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ppu", "contract"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Scheduled maintenance appointment.",
+      "type": "object",
+      "properties": {
+        "ppu": { "type": "string" },
+        "scheduledDate": { "type": "string", "format": "date-time" },
+        "mileage": { "type": "number" },
+        "reason": { "type": "string" },
+        "status": { "type": "string", "enum": ["scheduled", "arrived", "in_progress", "completed", "cancelled"] },
+        "supervisorUid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ppu", "scheduledDate", "status"]
+    },
+    "MaintenanceLog": {
+      "title": "MaintenanceLog",
+      "description": "Detailed record of maintenance work.",
+      "type": "object",
+      "properties": {
+        "appointmentId": { "type": "string" },
+        "ppu": { "type": "string" },
+        "type": { "type": "string", "enum": ["preventive", "corrective"] },
+        "entryChecklist": { "type": "object" },
+        "exitChecklist": { "type": "object" },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "totalHours": { "type": "number" },
+        "totalCost": { "type": "number" },
+        "workshopStaff": { "type": "array", "items": { "type": "string" } },
+        "supervisorUid": { "type": "string" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Vehicle configuration or construction project.",
+      "type": "object",
+      "properties": {
+        "ppu": { "type": "string" },
+        "name": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "budget": { "type": "number" },
+        "tasks": { "type": "array", "items": { "type": "object" } },
+        "status": { "type": "string", "enum": ["planning", "active", "completed"] }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles" },
+    "/vehicles/{ppu}": { "schema": "Vehicle", "description": "Fleet vehicles" },
+    "/appointments/{id}": { "schema": "Appointment", "description": "Maintenance schedule" },
+    "/maintenance_logs/{id}": { "schema": "MaintenanceLog", "description": "Work records" },
+    "/projects/{id}": { "schema": "Project", "description": "Vehicle arming projects" }
+  }
+}
